@@ -15,7 +15,7 @@ module.exports = {
 		var background = this.background = this.add.tileSprite(0,0, world.width, world.height, 'background');
 
     // define player and its properties
-    var duck = this.duck = this.add.sprite(world.width * 0.25, world.centerY, 'duck');
+    var duck = this.duck = this.add.sprite(world.width * 0.15, world.centerY, 'duck');
     duck.anchor.set(0.5);
 		this.physics.enable(duck, Phaser.Physics.ARCADE);
 		duck.body.collideWorldBounds = true;
@@ -36,7 +36,7 @@ module.exports = {
 		var groundLayer = this.groundLayer = this.map.createLayer('Ground');
 
 		// set collision between tiles from index 1 to 100, true means collision enabled
-		this.map.setCollisionBetween(1, 100, true, 'Ground');
+		this.map.setCollisionBetween(1, 200, true, 'Ground');
 		groundLayer.resizeWorld();
 
 		//Make the camera follow the sprite
@@ -55,16 +55,23 @@ module.exports = {
 
 		// keep background and player at the same position while the camera moves
 		this.background.x += this.speed;
-		this.duck.x += this.speed;
 
-    // make player always move forward
-		// this.duck.x += 3;
+		/*
+		*
+		* COLLISIONS
+		*
+		* */
 
-    // set velocity to 0 when player stops pressing keys
-		this.duck.body.velocity.setTo(0, 0);
+		this.physics.arcade.collide(this.duck, this.groundLayer, this.duckCollision, this.duckProcessCallback, this);
 
-		//Make the sprite collide with the ground layer
-		this.physics.arcade.collide(this.duck, this.groundLayer);
+		/*
+		*
+		* CONTROLS
+		*
+		* */
+
+    // set velocity to 0 when player stops pressing keys, but keep moving forward
+		this.duck.body.velocity.setTo(120, 0);
 
 		if (this.cursors.up.isDown)
 		{
@@ -82,6 +89,12 @@ module.exports = {
 
   quit: function () {
     this.state.start('menu');
-  }
+  },
+	
+	duckCollision: function () {
+		this.time.events.add(Phaser.Timer.SECOND * 3, fadePicture, this);
+		this.duck.alpha = 0.2;
+  	console.log("AHHHHHH");
+	}
 
 };
