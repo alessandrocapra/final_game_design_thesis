@@ -1,16 +1,20 @@
 module.exports = {
 
   create: function () {
-    var world = this.world;
 
-    // variable used to set the velocity to which the level moves
+  	var world = this.world;
+    // set the velocity to which the level moves
 		var speed = this.speed = 2;
+		this.music = this.sound.play('song');
+		this.score = 0;
+
+		this.enableCollision = true;
 
     // start the arcade physics system
 		this.physics.startSystem(Phaser.Physics.ARCADE);
 
-    // var carrot = this.carrot = this.add.image(world.width * 0.75, world.centerY, 'carrot');
-    // carrot.anchor.set(0.5);
+		// start song
+
 
 		var background = this.background = this.add.tileSprite(0,0, world.width, world.height, 'background');
 
@@ -19,11 +23,6 @@ module.exports = {
     duck.anchor.set(0.5);
 		this.physics.enable(duck, Phaser.Physics.ARCADE);
 		duck.body.collideWorldBounds = true;
-
-		//record the initial position, can be used to go back to it after position changed
-		this.startY = duck.y;
-		this.startX = duck.x;
-
     duck.scale.set(2);
     duck.animations.add('walk', null, 5, true);
     duck.animations.play('walk');
@@ -31,16 +30,35 @@ module.exports = {
     // tileset creation
 		this.map = this.game.add.tilemap('tilemap');
 		this.map.addTilesetImage('tiles_spritesheet', 'tiles');
+		this.map.addTilesetImage('Enemy', 'bee_tiles');
 
-		this.backgroundlayer = this.map.createLayer('Background');
+		// Import the tileset layers
+		var scenarioLayer = this.scenarioLayer = this.map.createLayer('Scenario');
 		var groundLayer = this.groundLayer = this.map.createLayer('Ground');
 
-		// set collision between tiles from index 1 to 100, true means collision enabled
-		this.map.setCollisionBetween(1, 200, true, 'Ground');
-		groundLayer.resizeWorld();
+		// Import enemies as objects
+		this.enemies = this.add.group();
+		this.enemies.enableBody = true;
+		// load enemies from tiled map
+		this.map.createFromObjects('Enemies', 157, 'bee', 0, true, false, this.enemies);
+		// create animation for all children of enemies group
+		this.enemies.callAll('animations.add', 'animations', 'fly', [0,2], 10, true);
+		this.enemies.callAll('animations.play', 'animations', 'fly');
 
-		//Make the camera follow the sprite
-		// this.camera.follow(this.duck);
+		// Import coins
+		this.coins = this.add.group();
+		this.coins.enableBody = true;
+		// load enemies from tiled map
+		this.map.createFromObjects('Coins', 161, 'coin', 0, true, false, this.coins);
+		// create animation for all children of coins group
+		this.coins.callAll('animations.add', 'animations', 'spin', [0, 1, 2, 3, 4, 5], 10, true);
+		this.coins.callAll('animations.play', 'animations', 'spin');
+
+
+		this.map.setCollisionBetween(1, 200, true, 'Scenario');
+		this.map.setCollisionBetween(1, 200, true, 'Ground');
+
+		groundLayer.resizeWorld();
 
 		var cursors = this.cursors = this.input.keyboard.createCursorKeys();
   },
@@ -62,7 +80,11 @@ module.exports = {
 		*
 		* */
 
-		this.physics.arcade.collide(this.duck, this.groundLayer, this.duckCollision, this.duckProcessCallback, this);
+		this.physics.arcade.collide(this.duck, [this.groundLayer, this.scenarioLayer, this.enemies], this.duckCollision, this.duckProcessCallback, this);
+
+		// overlap with coins
+		this.physics.arcade.overlap(this.duck, this.coins, this.collectCoin, null, this);
+
 
 		/*
 		*
@@ -90,11 +112,27 @@ module.exports = {
   quit: function () {
     this.state.start('menu');
   },
-	
+
+	duckProcessCallback: function(obj1, obj2){
+		// disable physics, so player can avoid getting stuck
+		if(this.enableCollision){
+			return true;
+		} else {
+			return false;
+		}
+	},
+
 	duckCollision: function () {
-		this.time.events.add(Phaser.Timer.SECOND * 3, fadePicture, this);
+		// this.time.events.add(Phaser.Timer.SECOND * 3, fadePicture, this);
+		this.enableCollision = false;
 		this.duck.alpha = 0.2;
   	console.log("AHHHHHH");
+	},
+	
+	collectCoin: function (player, coin) {
+		this.score += 10;
+		console.log("score: " + this.score);
+  	coin.kill();
 	}
 
 };
