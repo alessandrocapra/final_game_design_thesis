@@ -19,7 +19,9 @@ module.exports = {
     this.load.image('background', 'assets/sprites/bg_desert.png');
     this.load.spritesheet('duck', 'assets/sprites/chick.png', 16, 18);
 		this.load.spritesheet('coin', 'assets/sprites/coin.png', 32, 32);
-
+		this.load.image('heartFull', 'assets/sprites/hud_heartFull.png');
+		this.load.image('heartEmpty', 'assets/sprites/hud_heartEmpty.png');
+		this.load.image('overlay', 'assets/sprites/overlay.png');
 
 		// loading bee animation
 		this.load.spritesheet('bee', 'assets/sprites/bee.png', 56, 48);
