@@ -4,9 +4,10 @@ module.exports = {
 
   	var world = this.world;
   	// keep reference of Scene scope
-  	this.self = this;
+  	var self = this;
     // set the velocity to which the level moves
-		var speed = this.speed = 2;
+		var speed = this.speed = 3;
+
 		this.music = this.sound.play('song');
 		this.score = 0;
 		this.health = 40;
@@ -78,6 +79,29 @@ module.exports = {
 		this.menu.visible = false;
 		this.playAgainText.visible = false;
 
+		// Create a label to use as a button
+		this.pauseButton = this.add.image(world.width - 40, 40, 'pauseButton');
+		this.pauseButton.scale.setTo(0.1,0.1);
+		this.pauseButton.anchor.setTo(0.5, 0.5);
+		this.pauseButton.inputEnabled = true;
+
+		this.pauseButton.events.onInputUp.add(function () {
+			// When the pause button is pressed, we pause the game
+			console.log('button pressed!');
+
+			// stop camera
+			if(!self.stopTheCamera){
+				self.stopTheCamera = true;
+			} else {
+				self.music.resume();
+				self.paused = false;
+				self.physics.arcade.isPaused = (!self.physics.arcade.isPaused);
+				self.menu.visible = false;
+
+				self.stopTheCamera = false;
+			}
+		});
+
 		groundLayer.resizeWorld();
 
 		var cursors = this.cursors = this.input.keyboard.createCursorKeys();
@@ -116,10 +140,15 @@ module.exports = {
 			this.playAgainText.inputEnabled = true;
 			this.playAgainText.events.onInputUp.add(function(){
 				self.state.restart();
-			})
+			});
+		} else if(this.stopTheCamera) {
+			this.paused = true;
+			this.physics.arcade.isPaused = true;
+			this.music.pause();
 
-
-
+			this.menu.x = this.camera.x;
+			this.menu.y = this.camera.y;
+			this.menu.visible = true;
 		} else {
 			// make the background scroll
 			this.background.tilePosition.x -= this.speed;
@@ -137,6 +166,9 @@ module.exports = {
 			this.hearts.forEach(function (heart) {
 				heart.x += self.speed;
 			});
+
+			//move pause button
+			this.pauseButton.x += this.speed;
 		}
 
 		/*
@@ -158,7 +190,7 @@ module.exports = {
 		* */
 
     // set velocity to 0 when player stops pressing keys, but keep moving forward
-		this.duck.body.velocity.setTo(120, 0);
+		this.duck.body.velocity.setTo(this.speed*60, 0);
 
 		if (this.cursors.up.isDown)
 		{
@@ -221,6 +253,10 @@ module.exports = {
 		this.score += 10;
 		this.scoreText.setText('score: ' + this.score);
   	coin.kill();
+	},
+
+	togglePause: function (isPaused) {
+
 	}
 
 };

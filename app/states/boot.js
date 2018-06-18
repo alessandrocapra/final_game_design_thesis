@@ -22,13 +22,14 @@ module.exports = {
 		this.load.image('heartFull', 'assets/sprites/hud_heartFull.png');
 		this.load.image('heartEmpty', 'assets/sprites/hud_heartEmpty.png');
 		this.load.image('overlay', 'assets/sprites/overlay.png');
+		this.load.image('pauseButton', 'assets/sprites/pause_button.png');
 
 		// loading bee animation
 		this.load.spritesheet('bee', 'assets/sprites/bee.png', 56, 48);
 
     // loading tileset
 		// this.load.tilemap('tilemap', 'assets/tilemaps/level2.json', null, Phaser.Tilemap.TILED_JSON);
-		this.load.tilemap('tilemap', 'assets/tilemaps/fast_exhalations.json', null, Phaser.Tilemap.TILED_JSON);
+		this.load.tilemap('tilemap', 'assets/tilemaps/fast_exhalations_faster.json', null, Phaser.Tilemap.TILED_JSON);
 		this.load.image('tiles', 'assets/tilemaps/tiles_spritesheet.png');
 		this.load.image('bee_tiles', 'assets/sprites/bee.png');
 
