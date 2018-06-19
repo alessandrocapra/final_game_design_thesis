@@ -29,7 +29,7 @@ module.exports = {
 
     // loading tileset
 		// this.load.tilemap('tilemap', 'assets/tilemaps/level2.json', null, Phaser.Tilemap.TILED_JSON);
-		this.load.tilemap('tilemap', 'assets/tilemaps/fast_exhalations_faster.json', null, Phaser.Tilemap.TILED_JSON);
+		this.load.tilemap('tilemap', 'assets/tilemaps/fast_exhalations_dolphin.json', null, Phaser.Tilemap.TILED_JSON);
 		this.load.image('tiles', 'assets/tilemaps/tiles_spritesheet.png');
 		this.load.image('bee_tiles', 'assets/sprites/bee.png');
 

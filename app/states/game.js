@@ -19,15 +19,6 @@ module.exports = {
 
 		var background = this.background = this.add.tileSprite(0,0, world.width, world.height, 'background');
 
-    // define player and its properties
-    var duck = this.duck = this.add.sprite(80, world.centerY, 'duck');
-    duck.anchor.setTo(0.5, 0.5);
-		this.physics.enable(duck, Phaser.Physics.ARCADE);
-		duck.body.collideWorldBounds = true;
-    duck.scale.set(2);
-    duck.animations.add('walk', null, 5, true);
-    duck.animations.play('walk');
-
     // tileset creation
 		this.map = this.game.add.tilemap('tilemap');
 		this.map.addTilesetImage('tiles_spritesheet', 'tiles');
@@ -35,8 +26,10 @@ module.exports = {
 
 		// Import the tileset layers
 		var scenarioLayer = this.scenarioLayer = this.map.createLayer('Scenario');
+		var foregroundLayer = this.foregroundLayer = this.map.createLayer('Foreground');
 		var groundLayer = this.groundLayer = this.map.createLayer('Ground');
 		this.map.setCollisionBetween(1, 200, true, 'Scenario');
+		this.map.setCollisionBetween(1, 200, true, 'Foreground');
 		this.map.setCollisionBetween(1, 200, true, 'Ground');
 
 		// Import enemies as objects
@@ -79,7 +72,7 @@ module.exports = {
 		this.menu.visible = false;
 		this.playAgainText.visible = false;
 
-		// Create a label to use as a button
+		// Create pause button
 		this.pauseButton = this.add.image(world.width - 40, 40, 'pauseButton');
 		this.pauseButton.scale.setTo(0.1,0.1);
 		this.pauseButton.anchor.setTo(0.5, 0.5);
@@ -101,6 +94,15 @@ module.exports = {
 				self.stopTheCamera = false;
 			}
 		});
+
+		// define player and its properties
+		var duck = this.duck = this.add.sprite(80, world.centerY, 'duck');
+		duck.anchor.setTo(0.5, 0.5);
+		this.physics.enable(duck, Phaser.Physics.ARCADE);
+		duck.body.collideWorldBounds = true;
+		duck.scale.set(2);
+		duck.animations.add('walk', null, 5, true);
+		duck.animations.play('walk');
 
 		groundLayer.resizeWorld();
 
@@ -177,7 +179,11 @@ module.exports = {
 		*
 		* */
 
-		this.physics.arcade.collide(this.duck, [this.groundLayer, this.scenarioLayer, this.enemies], this.duckCollision, this.duckProcessCallback, this);
+		this.physics.arcade.collide(this.duck, [this.scenarioLayer, this.enemies], this.duckCollision, this.duckProcessCallback, this);
+
+		// overlap with water
+		// easier to check if duck is under a specific Y, instead of using overlap
+		this.duck.y >	 this.world.centerY+50 ? this.duck.alpha = 0.3 : this.duck.alpha = 1;
 
 		// overlap with coins
 		this.physics.arcade.overlap(this.duck, this.coins, this.collectCoin, null, this);
