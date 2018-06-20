@@ -15,6 +15,13 @@ module.exports = {
   },
 
   preload: function () {
+
+		this.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
+		this.scale.setScreenSize = true;
+		this.scale.pageAlignHorizontally = true;
+		this.scale.pageAlignVertically = true;
+		this.forceSingleUpdate = true;
+
     this.load.setPreloadSprite(this.bar);
     this.load.image('background', 'assets/sprites/bg_desert.png');
     this.load.spritesheet('duck', 'assets/sprites/chick.png', 16, 18);

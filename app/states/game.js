@@ -18,6 +18,7 @@ module.exports = {
 		this.enableCollision = true;
 
 		var background = this.background = this.add.tileSprite(0,0, world.width, world.height, 'background');
+		background.fixedToCamera = true;
 
     // tileset creation
 		this.map = this.game.add.tilemap('tilemap');
@@ -28,8 +29,12 @@ module.exports = {
 		var scenarioLayer = this.scenarioLayer = this.map.createLayer('Scenario');
 		var foregroundLayer = this.foregroundLayer = this.map.createLayer('Foreground');
 		var groundLayer = this.groundLayer = this.map.createLayer('Ground');
+		var underwaterLayer = this.underwaterLayer = this.map.createLayer('Underwater');
+		underwaterLayer.alpha = 0.7;
+
 		this.map.setCollisionBetween(1, 200, true, 'Scenario');
 		this.map.setCollisionBetween(1, 200, true, 'Foreground');
+		this.map.setCollisionBetween(1, 200, true, 'Underwater');
 		this.map.setCollisionBetween(1, 200, true, 'Ground');
 
 		// Import enemies as objects
@@ -60,6 +65,8 @@ module.exports = {
 		this.style = { font: "bold 24px Arial", fill: "#000"};
 		this.scoreText = this.add.text(400, 40, "score: 0", this.style);
 		this.scoreText.anchor.setTo(0.5, 0.5);
+		// fix to camera
+		this.scoreText.fixedToCamera = true;
 
 		// hearts for health
 		this.hearts = this.add.group();
@@ -71,6 +78,8 @@ module.exports = {
 			heart.anchor.setTo(0.5, 0.5);
 			heart.scale.setTo(0.7, 0.7);
 		});
+		// fix to camera
+		this.hearts.fixedToCamera = true;
 
 		// load overlay gameOver screen and hide it
 		this.menu = this.add.sprite(this.camera.x, this.camera.y, 'overlay');
@@ -83,6 +92,8 @@ module.exports = {
 		this.pauseButton.scale.setTo(0.1,0.1);
 		this.pauseButton.anchor.setTo(0.5, 0.5);
 		this.pauseButton.inputEnabled = true;
+		// fix to camera
+		this.pauseButton.fixedToCamera = true;
 
 		this.pauseButton.events.onInputUp.add(function () {
 			// When the pause button is pressed, we pause the game
@@ -113,6 +124,9 @@ module.exports = {
 		duck.body.allowDrag = true;
 		duck.body.drag.set(0, 100);
 		duck.body.maxVelocity.set(0, 400);
+
+		this.camera.follow(duck);
+		this.camera.deadzone = new Phaser.Rectangle(0, 0, 110, 400);
 
 		groundLayer.resizeWorld();
 
@@ -179,18 +193,7 @@ module.exports = {
 			this.camera.x += this.speed;
 
 			// keep background and player at the same position while the camera moves
-			this.background.x += this.speed;
-
-			// Keep the score text at the same position
-			this.scoreText.x += this.speed;
-
-			// move hearts
-			this.hearts.forEach(function (heart) {
-				heart.x += self.speed;
-			});
-
-			//move pause button
-			this.pauseButton.x += this.speed;
+			// this.background.x += this.speed;
 		}
 
 		/*
@@ -199,7 +202,7 @@ module.exports = {
 		*
 		* */
 
-		this.physics.arcade.collide(this.duck, [this.scenarioLayer, this.enemies], this.duckCollision, this.duckProcessCallback, this);
+		this.physics.arcade.collide(this.duck, [this.scenarioLayer, this.foregroundLayer, this.enemies], this.duckCollision, this.duckProcessCallback, this);
 
 		// overlap with water
 		// easier to check if duck is under a specific Y, instead of using overlap
@@ -215,7 +218,8 @@ module.exports = {
 		*
 		* */
 
-		this.duck.body.velocity.x = this.speed*60;
+		this.duck.x += this.speed;
+		// this.duck.body.acceleration.x = 200;
 
 		if( this.duck.body.y > this.world.centerY + 50){
 			this.physics.arcade.gravity.y = -800;
@@ -231,9 +235,9 @@ module.exports = {
 				this.duck.body.drag.set(0, drag);
 		}
 
-		if( this.cursors.up.isDown ){
-			this.duck.body.acceleration.y = -400;
-		}else if( this.cursors.down.isDown ){
+		if(this.cursors.up.isDown){
+			this.duck.body.acceleration.y = -600;
+		}else if( this.cursors.down.isDown){
 			this.duck.body.acceleration.y = 600;
 		}else{
 			this.duck.body.acceleration.y = 0;
