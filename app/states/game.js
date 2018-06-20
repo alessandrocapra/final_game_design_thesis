@@ -15,6 +15,7 @@ module.exports = {
 
     // start the arcade physics system
 		this.physics.startSystem(Phaser.Physics.ARCADE);
+		this.physics.arcade.gravity.y = 500;
 		this.enableCollision = true;
 
 		var background = this.background = this.add.tileSprite(0,0, world.width, world.height, 'background');
@@ -35,7 +36,7 @@ module.exports = {
 		this.map.setCollisionBetween(1, 200, true, 'Scenario');
 		this.map.setCollisionBetween(1, 200, true, 'Foreground');
 		this.map.setCollisionBetween(1, 200, true, 'Underwater');
-		this.map.setCollisionBetween(1, 200, true, 'Ground');
+		// this.map.setCollisionBetween(1, 200, true, 'Ground');
 
 		// Import enemies as objects
 		this.enemies = this.add.group();
@@ -112,10 +113,10 @@ module.exports = {
 			}
 		});
 
-		// define player and its properties
+		// define duck and its properties
 		var duck = this.duck = this.add.sprite(80, world.centerY+50, 'duck');
 		duck.anchor.setTo(0.5, 0.5);
-		this.physics.enable(duck, Phaser.Physics.ARCADE);
+		this.physics.arcade.enable(duck);
 		duck.body.collideWorldBounds = true;
 		duck.scale.set(2);
 		duck.animations.add('walk', null, 5, true);
@@ -123,18 +124,18 @@ module.exports = {
 
 		duck.body.allowDrag = true;
 		duck.body.drag.set(0, 100);
-		duck.body.maxVelocity.set(0, 400);
+		duck.body.maxVelocity.set(200, 400);
 
 		this.camera.follow(duck);
-		this.camera.deadzone = new Phaser.Rectangle(0, 0, 110, 400);
+		this.camera.deadzone = new Phaser.Rectangle(0, 0, 100, 400);
 
 		groundLayer.resizeWorld();
 
 		var cursors = this.cursors = this.input.keyboard.createCursorKeys();
 
 		cursors.down.onDown.add(() => {
-			if(this.duck.body.y > this.world.centerY - 35 && this.duck.body.y < this.world.height - 50 )
-				this.duck.body.velocity.y = 350;
+			if(this.duck.body.y > this.world.centerY - 35 && this.duck.body.y < this.world.height - 70 )
+				this.duck.body.velocity.y = 600;
 		});
 
 		cursors.up.onDown.add(() => {
@@ -190,7 +191,7 @@ module.exports = {
 			this.background.tilePosition.x -= this.speed;
 
 			// keep scrolling the level
-			this.camera.x += this.speed;
+			// this.camera.x += this.speed;
 
 			// keep background and player at the same position while the camera moves
 			// this.background.x += this.speed;
@@ -218,33 +219,47 @@ module.exports = {
 		*
 		* */
 
-		this.duck.x += this.speed;
-		// this.duck.body.acceleration.x = 200;
+		this.duck.body.velocity.x = this.speed*60;
 
+		// Underwater gravity (boyancy)
 		if( this.duck.body.y > this.world.centerY + 50){
 			this.physics.arcade.gravity.y = -800;
+
+			// This 'gap' prevents the infinite bobbing
 		}else if( this.duck.body.y < this.world.centerY + 20 && this.duck.body.y >= this.world.centerY + 25 ){
-			this.physics.arcade.gravity.y = 0;
+			this.physics.arcade.gravity.thisy = 0;
+
+			// Above water gravity
 		}else if( this.duck.body.y < this.world.centerY + 20 ){
 			this.physics.arcade.gravity.y = 1000;
+
+			// Surface tension
+			// As the player passes through this area, the drag is more the faster they are going
+			// This is the key to slowing the player down and preventing them from popping
+			// out of the water, then back in, over and over.
 		}else{
+
+			// Have a slight amount of gravity so that if they end up resting in this area
+			// they will gradually rise to the surface
 			this.physics.arcade.gravity.y = -120;
+
+			// Caludlate the drag using the velocity
+			// Faster the velocity, higher the drag
 			const drag = (( Math.abs(this.duck.body.velocity.y) * 200 ) / 400) + 50;
 
-			if(!this.cursors.down.isDown )
+			// Don't do this if they are trying to swim down
+			if( !this.cursors.down.isDown )
 				this.duck.body.drag.set(0, drag);
 		}
 
-		if(this.cursors.up.isDown){
-			this.duck.body.acceleration.y = -600;
-		}else if( this.cursors.down.isDown){
+		// This bit gives the player a little boost if they press and hold the cursor key rather than just tap
+		if( this.cursors.up.isDown ){
+			this.duck.body.acceleration.y = -400;
+		}else if( this.cursors.down.isDown ){
 			this.duck.body.acceleration.y = 600;
 		}else{
 			this.duck.body.acceleration.y = 0;
 		}
-
-			// this.physics.arcade.moveToXY(this.duck,this.duck.x+400,this.world.centerY+50, 180);
-			// this.add.tween(this.duck).to( { y: this.world.centerY+50 }, 1000, Phaser.Easing.Bounce.Out, true);
   },
 
   restart: function () {
@@ -257,29 +272,34 @@ module.exports = {
 
 	duckProcessCallback: function(obj1, obj2){
 		// disable physics, so player can avoid getting stuck
-		if(this.enableCollision){
-			return true;
-		} else {
-			return false;
-		}
+		// if(this.enableCollision){
+		// 	return true;
+		// } else {
+		// 	return false;
+		// }
+		return this.enableCollision;
 	},
 
-	duckCollision: function () {
+	duckCollision: function (player, tile) {
+  	console.log('tile: ', tile);
 
-		this.health -= 10;
+  	if(player.y < tile.y){
+  		console.log("Collision from above")
+		} else {
+			this.health -= 10;
+			this.enableCollision = false;
+			// this.duck.alpha = 0.2;
+			this.duck.tint = 0xFF3333;
+		}
+
 		if(this.health === 0){
 			this.gameOver = true;
 		}
 
-		this.enableCollision = false;
-		this.duck.alpha = 0.2;
-
   	for(let i = this.hearts.length-1; i >= 0; i--){
   		let currentHeart = this.hearts.getAt(i);
-  		console.log("currentHeart, position " + i + ": ", currentHeart);
 
   		if(currentHeart.key === 'heartFull'){
-  			console.log("Inside heartFull");
 				currentHeart.loadTexture('heartEmpty');
 				break;
 			}
@@ -290,7 +310,8 @@ module.exports = {
 	},
 
 	resetPlayer: function (){
-		this.duck.alpha = 1;
+		// this.duck.alpha = 1;
+		this.duck.tint = 0xFFFFFF;
 		this.enableCollision = true;
 	},
 	
