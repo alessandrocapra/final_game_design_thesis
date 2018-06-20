@@ -270,43 +270,47 @@ module.exports = {
     this.state.start('menu');
   },
 
-	duckProcessCallback: function(obj1, obj2){
+	duckProcessCallback: function(player, tile){
 		// disable physics, so player can avoid getting stuck
 		// if(this.enableCollision){
 		// 	return true;
 		// } else {
 		// 	return false;
 		// }
+
 		return this.enableCollision;
 	},
 
 	duckCollision: function (player, tile) {
-  	console.log('tile: ', tile);
+		// debugger;
 
-  	if(player.y < tile.y){
-  		console.log("Collision from above")
+  	console.log('dC: player: ', player.body);
+  	console.log('dC: tile: ', tile);
+
+  	if(player.body.blocked.down){
+  		console.log("Collision from above");
 		} else {
 			this.health -= 10;
 			this.enableCollision = false;
 			// this.duck.alpha = 0.2;
 			this.duck.tint = 0xFF3333;
-		}
 
-		if(this.health === 0){
-			this.gameOver = true;
-		}
+			for(let i = this.hearts.length-1; i >= 0; i--){
+				let currentHeart = this.hearts.getAt(i);
 
-  	for(let i = this.hearts.length-1; i >= 0; i--){
-  		let currentHeart = this.hearts.getAt(i);
-
-  		if(currentHeart.key === 'heartFull'){
-				currentHeart.loadTexture('heartEmpty');
-				break;
+				if(currentHeart.key === 'heartFull'){
+					currentHeart.loadTexture('heartEmpty');
+					break;
+				}
 			}
-		}
 
-		// set timer to put the collisions back to normal after a while
-		this.time.events.add(Phaser.Timer.SECOND * 3, this.resetPlayer, this);
+			if(this.health === 0){
+				this.gameOver = true;
+			}
+
+			// set timer to put the collisions back to normal after a while
+			this.time.events.add(Phaser.Timer.SECOND * 3, this.resetPlayer, this);
+		}
 	},
 
 	resetPlayer: function (){
