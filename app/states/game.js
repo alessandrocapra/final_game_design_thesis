@@ -49,11 +49,12 @@ module.exports = {
 		// Import coins
 		this.coins = this.add.group();
 		this.coins.enableBody = true;
-		// load enemies from tiled map
+		// load coins from tiled map
 		this.map.createFromObjects('Coins', 161, 'coin', 0, true, false, this.coins);
 		// create animation for all children of coins group
 		this.coins.callAll('animations.add', 'animations', 'spin', [0, 1, 2, 3, 4, 5], 10, true);
 		this.coins.callAll('animations.play', 'animations', 'spin');
+		this.coins.setAll('body.allowGravity', false);
 
 		// Score text
 		this.style = { font: "bold 24px Arial", fill: "#000"};
@@ -112,7 +113,6 @@ module.exports = {
 		duck.body.allowDrag = true;
 		duck.body.drag.set(0, 100);
 		duck.body.maxVelocity.set(0, 400);
-
 
 		groundLayer.resizeWorld();
 
