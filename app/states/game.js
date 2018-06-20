@@ -35,11 +35,16 @@ module.exports = {
 		// Import enemies as objects
 		this.enemies = this.add.group();
 		this.enemies.enableBody = true;
+
 		// load enemies from tiled map
 		this.map.createFromObjects('Enemies', 157, 'bee', 0, true, false, this.enemies);
 		// create animation for all children of enemies group
 		this.enemies.callAll('animations.add', 'animations', 'fly', [0,2], 10, true);
 		this.enemies.callAll('animations.play', 'animations', 'fly');
+		this.enemies.setAll('body.allowGravity', false);
+
+		// make enemies pulse to rhythm
+		this.add.tween(this.enemies.scale).to( {y: 1.2}, 480, Phaser.Easing.Back.InOut, true, 0, false);
 
 		// Import coins
 		this.coins = this.add.group();
@@ -96,7 +101,7 @@ module.exports = {
 		});
 
 		// define player and its properties
-		var duck = this.duck = this.add.sprite(80, world.centerY, 'duck');
+		var duck = this.duck = this.add.sprite(80, world.centerY+50, 'duck');
 		duck.anchor.setTo(0.5, 0.5);
 		this.physics.enable(duck, Phaser.Physics.ARCADE);
 		duck.body.collideWorldBounds = true;
@@ -104,9 +109,24 @@ module.exports = {
 		duck.animations.add('walk', null, 5, true);
 		duck.animations.play('walk');
 
+		duck.body.allowDrag = true;
+		duck.body.drag.set(0, 100);
+		duck.body.maxVelocity.set(0, 400);
+
+
 		groundLayer.resizeWorld();
 
 		var cursors = this.cursors = this.input.keyboard.createCursorKeys();
+
+		cursors.down.onDown.add(() => {
+			if(this.duck.body.y > this.world.centerY - 35 && this.duck.body.y < this.world.height - 50 )
+				this.duck.body.velocity.y = 350;
+		});
+
+		cursors.up.onDown.add(() => {
+			if( this.duck.body.y <= this.world.centerY + 50 && this.duck.body.y > 50 )
+				this.duck.body.velocity.y = -600;
+		});
   },
 
   update: function () {
@@ -183,7 +203,7 @@ module.exports = {
 
 		// overlap with water
 		// easier to check if duck is under a specific Y, instead of using overlap
-		this.duck.y >	 this.world.centerY+50 ? this.duck.alpha = 0.3 : this.duck.alpha = 1;
+		this.duck.y >	 this.world.centerY+60 ? this.duck.alpha = 0.3 : this.duck.alpha = 1;
 
 		// overlap with coins
 		this.physics.arcade.overlap(this.duck, this.coins, this.collectCoin, null, this);
@@ -195,17 +215,32 @@ module.exports = {
 		*
 		* */
 
-    // set velocity to 0 when player stops pressing keys, but keep moving forward
-		this.duck.body.velocity.setTo(this.speed*60, 0);
+		this.duck.body.velocity.x = this.speed*60;
 
-		if (this.cursors.up.isDown)
-		{
-			this.duck.body.velocity.y = -200;
+		if( this.duck.body.y > this.world.centerY + 50){
+			this.physics.arcade.gravity.y = -800;
+		}else if( this.duck.body.y < this.world.centerY + 20 && this.duck.body.y >= this.world.centerY + 25 ){
+			this.physics.arcade.gravity.y = 0;
+		}else if( this.duck.body.y < this.world.centerY + 20 ){
+			this.physics.arcade.gravity.y = 1000;
+		}else{
+			this.physics.arcade.gravity.y = -120;
+			const drag = (( Math.abs(this.duck.body.velocity.y) * 200 ) / 400) + 50;
+
+			if(!this.cursors.down.isDown )
+				this.duck.body.drag.set(0, drag);
 		}
-		else if (this.cursors.down.isDown)
-		{
-			this.duck.body.velocity.y = 200;
+
+		if( this.cursors.up.isDown ){
+			this.duck.body.acceleration.y = -400;
+		}else if( this.cursors.down.isDown ){
+			this.duck.body.acceleration.y = 600;
+		}else{
+			this.duck.body.acceleration.y = 0;
 		}
+
+			// this.physics.arcade.moveToXY(this.duck,this.duck.x+400,this.world.centerY+50, 180);
+			// this.add.tween(this.duck).to( { y: this.world.centerY+50 }, 1000, Phaser.Easing.Bounce.Out, true);
   },
 
   restart: function () {
