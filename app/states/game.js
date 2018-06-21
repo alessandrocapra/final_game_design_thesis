@@ -8,7 +8,11 @@ module.exports = {
     // set the velocity to which the level moves
 		var speed = this.speed = 3;
 
-		this.music = this.sound.play('song');
+		// delay the music start
+		this.time.events.add(Phaser.Timer.SECOND * 7.8, function(){
+			self.music = self.sound.play('song');
+		}, this);
+
 		this.score = 0;
 		this.health = 60;
 		this.coinValue = 10;
@@ -54,7 +58,9 @@ module.exports = {
 		this.enemies.setAll('body.allowGravity', false);
 
 		// make enemies pulse to rhythm
-		this.add.tween(this.enemies.scale).to( {y: 1.2}, 480, Phaser.Easing.Back.InOut, true, 0, false);
+		this.enemies.forEach(function (bee) {
+			self.add.tween(bee.scale).to( {x:1.2, y: 1.2}, 480, Phaser.Easing.Back.InOut, true, 0, false);
+		});
 
 		// Import coins
 		this.coins = this.add.group();
@@ -79,6 +85,58 @@ module.exports = {
 		this.infoText.visible = false;
 		// fix to camera
 		this.infoText.fixedToCamera = true;
+
+		/*
+		*
+		* Initial instructions when the game starts
+		*
+		* */
+
+		// arrows for instructions at the beginning
+		// var arrowUp = this.arrowUp = this.add.sprite(this.world.centerX*0.6, this.world.height*0.4, 'arrowUp');
+		// arrowUp.scale.setTo(0.05,0.05);
+		// arrowUp.anchor.setTo(.5,.5);
+		// arrowUp.fixedToCamera = true;
+		//
+		// var arrowDown = this.arrowDown = this.add.sprite(this.world.centerX*0.6, this.world.height*0.5, 'arrowUp')
+		// arrowDown.scale.setTo(0.05,0.05);
+		// arrowDown.anchor.setTo(.5,.5);
+		// // flip it horizontally
+		// arrowDown.scale.y *= -1;
+		// arrowDown.fixedToCamera = true;
+
+
+		var mouth = this.arrowUp = this.add.sprite(this.world.centerX*0.7, this.world.height*0.4, 'mouth');
+		mouth.scale.setTo(0.1,0.1);
+		mouth.anchor.setTo(.5,.5);
+		mouth.fixedToCamera = true;
+
+		var nose = this.arrowDown = this.add.sprite(this.world.centerX*0.7, this.world.height*0.52, 'nose')
+		nose.scale.setTo(0.1,0.1);
+		nose.anchor.setTo(.5,.5);
+		// flip it horizontally
+		// arrowDown.scale.y *= -1;
+		nose.fixedToCamera = true;
+
+		// add text for the arrows explanation
+		this.instructionArrowUp = this.add.text(this.world.centerX, this.world.height*0.4, 'Jump and fly', {align: "left", boundsAlignH: "left", boundsAlignV: "middle"});
+		this.instructionArrowUp.anchor.setTo(0.5, 0.5);
+		// fix to camera
+		this.instructionArrowUp.fixedToCamera = true;
+
+		this.instructionArrowDown = this.add.text(this.world.centerX*1.03, this.world.height*0.52, 'Go under water', {align: "left", boundsAlignH: "left", boundsAlignV: "middle"});
+		this.instructionArrowDown.anchor.setTo(0.5, 0.5);
+		// fix to camera
+		this.instructionArrowDown.fixedToCamera = true;
+
+		// destroy the arrows and text after 5 seconds
+		this.time.events.add(Phaser.Timer.SECOND * 5, function(){
+			mouth.destroy();
+			nose.destroy();
+			this.instructionArrowUp.destroy();
+			this.instructionArrowDown.destroy();
+		}, this);
+
 
 		// hearts for health
 		this.hearts = this.add.group();
@@ -150,7 +208,7 @@ module.exports = {
 		});
 
 		cursors.up.onDown.add(() => {
-			if( this.duck.body.y <= this.world.centerY + 50 && this.duck.body.y > 50 )
+			if( this.duck.body.y <= this.world.centerY + 50 && this.duck.body.y > 100 )
 				this.duck.body.velocity.y = -600;
 		});
   },
@@ -266,7 +324,7 @@ module.exports = {
 
 		// This bit gives the player a little boost if they press and hold the cursor key rather than just tap
 		if( this.cursors.up.isDown ){
-			this.duck.body.acceleration.y = -400;
+			this.duck.body.acceleration.y = -600;
 		}else if( this.cursors.down.isDown ){
 			this.duck.body.acceleration.y = 600;
 		}else{
@@ -289,6 +347,7 @@ module.exports = {
 
 	duckCollision: function (player, object) {
 
+  	// special actions if the object hit is a bee
   	if(object.key === 'bee'){
   		// object.destroy();
 
@@ -297,16 +356,19 @@ module.exports = {
 			object.body.allowGravity = true;
 
 		}
+
+		// do not count collisions on top/bottom of platforms as damaging for health
   	if(player.body.blocked.down || player.body.blocked.up){
   		console.log("Collision from above/below");
 		} else {
 			this.health -= 10;
 			this.enableCollision = false;
-			// this.duck.alpha = 0.2;
+
 			this.duck.tint = 0xFF3333;
 			this.add.tween(this.duck).to( { angle: 1440 }, 1000, Phaser.Easing.Linear.None, true);
 			this.add.tween(this.duck.scale).to( { x: 3, y: 3 }, 500, Phaser.Easing.Linear.None, true).yoyo(true);
 
+			// update hearts count and display
 			for(let i = this.hearts.length-1; i > 0; i--){
 				let currentHeart = this.hearts.getAt(i);
 
@@ -346,11 +408,9 @@ module.exports = {
 		*
 		* */
 
-		// debugger;
-
-
 		var self = this;
 
+		// remove the element from the screen
 		this.map.removeTile(box.x, box.y, this.specialBoxesLayer);
 
 		var choice = this.rnd.between(0,100);
@@ -365,16 +425,13 @@ module.exports = {
 					// update health value as well
 					this.health += 10;
 
-					//display info text
-					this.infoText.setText('One heart recovered!');
-					this.infoText.visible = true;
-
-					// destroy it after 3 seconds
-					this.time.events.add(Phaser.Timer.SECOND * 5, function(){
-						self.infoText.visible=false;
-					}, this);
+					this.showAndRemoveText(this.infoText, 'One heart recovered!');
 
 					break;
+				}
+
+				if(i === this.hearts.length-1){
+					this.showAndRemoveText(this.infoText,'Already had max health!');
 				}
 			}
 		} else {
@@ -386,22 +443,16 @@ module.exports = {
 				self.coinValue = 10;
 			}, this);
 
-			//display info text
-			this.infoText.setText('All coins are double value for 5 seconds!');
-			this.infoText.visible = true;
+			this.showAndRemoveText(this.infoText,'All coins are double value for 5 seconds!');
 
 			this.coins.forEach(function(coin){
 				self.add.tween(coin.scale).to( { x: 1.5, y: 1.5}, 500, Phaser.Easing.Quadratic.InOut, true);
-
 			});
 
 			// destroy it after 3 seconds
 			this.time.events.add(Phaser.Timer.SECOND * 5, function(){
-				self.infoText.visible = false;
-
 				this.coins.forEach(function(coin){
 					self.add.tween(coin.scale).to( { x: 1, y: 1 }, 500, Phaser.Easing.Quadratic.InOut, true);
-
 				});
 			}, this);
 		}
@@ -410,6 +461,18 @@ module.exports = {
 
 	togglePause: function (isPaused) {
 
+	},
+
+	showAndRemoveText: function (text, message) {
+
+  	//display info text
+		text.setText(message);
+		text.visible = true;
+
+		// destroy it after 5 seconds
+		this.time.events.add(Phaser.Timer.SECOND * 5, function(){
+			text.visible=false;
+		}, this);
 	}
 
 };
