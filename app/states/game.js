@@ -10,7 +10,8 @@ module.exports = {
 
 		this.music = this.sound.play('song');
 		this.score = 0;
-		this.health = 40;
+		this.health = 60;
+		this.coinValue = 10;
 		this.gameOver = false;
 
     // start the arcade physics system
@@ -32,10 +33,12 @@ module.exports = {
 		var groundLayer = this.groundLayer = this.map.createLayer('Ground');
 		var underwaterLayer = this.underwaterLayer = this.map.createLayer('Underwater');
 		underwaterLayer.alpha = 0.7;
+		var specialBoxesLayer = this.specialBoxesLayer = this.map.createLayer('SpecialBoxes');
 
 		this.map.setCollisionBetween(1, 200, true, 'Scenario');
 		this.map.setCollisionBetween(1, 200, true, 'Foreground');
 		this.map.setCollisionBetween(1, 200, true, 'Underwater');
+		this.map.setCollisionBetween(1, 200, true, 'SpecialBoxes');
 		// this.map.setCollisionBetween(1, 200, true, 'Ground');
 
 		// Import enemies as objects
@@ -47,6 +50,7 @@ module.exports = {
 		// create animation for all children of enemies group
 		this.enemies.callAll('animations.add', 'animations', 'fly', [0,2], 10, true);
 		this.enemies.callAll('animations.play', 'animations', 'fly');
+		this.enemies.callAll('animations.add', 'animations', 'dead', [1], 10, true);
 		this.enemies.setAll('body.allowGravity', false);
 
 		// make enemies pulse to rhythm
@@ -69,9 +73,16 @@ module.exports = {
 		// fix to camera
 		this.scoreText.fixedToCamera = true;
 
+		// info text for special boxes
+		this.infoText = this.add.text(this.world.centerX, this.world.height*0.3, 'Special boxes');
+		this.infoText.anchor.setTo(0.5, 0.5);
+		this.infoText.visible = false;
+		// fix to camera
+		this.infoText.fixedToCamera = true;
+
 		// hearts for health
 		this.hearts = this.add.group();
-		for(let i=0; i < 4; i++){
+		for(let i=0; i < 6; i++){
 			this.hearts.create(50 + i*45, 40, 'heartFull')
 		}
 		// change anchor and scale for all hearts
@@ -203,7 +214,8 @@ module.exports = {
 		*
 		* */
 
-		this.physics.arcade.collide(this.duck, [this.scenarioLayer, this.foregroundLayer, this.enemies], this.duckCollision, this.duckProcessCallback, this);
+		this.physics.arcade.collide(this.duck, [this.scenarioLayer, this.foregroundLayer, this.underwaterLayer, this.enemies], this.duckCollision, this.duckProcessCallback, this);
+		this.physics.arcade.collide(this.duck, this.specialBoxesLayer, this.hitSpecialBoxes, null, this);
 
 		// overlap with water
 		// easier to check if duck is under a specific Y, instead of using overlap
@@ -272,32 +284,30 @@ module.exports = {
 
 	duckProcessCallback: function(player, tile){
 		// disable physics, so player can avoid getting stuck
-		// if(this.enableCollision){
-		// 	return true;
-		// } else {
-		// 	return false;
-		// }
-
 		return this.enableCollision;
 	},
 
-	duckCollision: function (player, tile) {
-		// debugger;
+	duckCollision: function (player, object) {
 
-  	console.log('dC: player: ', player.body);
-  	console.log('dC: tile: ', tile);
+  	if(object.key === 'bee'){
+  		// object.destroy();
 
+  		// spin and fall
+			object.animations.play('dead', 10, true);
+			object.body.allowGravity = true;
+
+		}
   	if(player.body.blocked.down || player.body.blocked.up){
-  		console.log("Collision from above");
+  		console.log("Collision from above/below");
 		} else {
 			this.health -= 10;
 			this.enableCollision = false;
 			// this.duck.alpha = 0.2;
 			this.duck.tint = 0xFF3333;
 			this.add.tween(this.duck).to( { angle: 1440 }, 1000, Phaser.Easing.Linear.None, true);
-			this.add.tween(this.duck.scale).to( { x: 5, y: 5 }, 500, Phaser.Easing.Linear.None, true).yoyo(true);
+			this.add.tween(this.duck.scale).to( { x: 3, y: 3 }, 500, Phaser.Easing.Linear.None, true).yoyo(true);
 
-			for(let i = this.hearts.length-1; i >= 0; i--){
+			for(let i = this.hearts.length-1; i > 0; i--){
 				let currentHeart = this.hearts.getAt(i);
 
 				if(currentHeart.key === 'heartFull'){
@@ -322,9 +332,80 @@ module.exports = {
 	},
 	
 	collectCoin: function (player, coin) {
-		this.score += 10;
+		this.score += this.coinValue;
 		this.scoreText.setText('score: ' + this.score);
   	coin.kill();
+	},
+
+	hitSpecialBoxes: function(player, box){
+		/*
+		*
+		* Randomly, the boxes could mean:
+		* - player gets additional heart
+		* - for the next 5 seconds, all coins give double amount of points
+		*
+		* */
+
+		// debugger;
+
+
+		var self = this;
+
+		this.map.removeTile(box.x, box.y, this.specialBoxesLayer);
+
+		var choice = this.rnd.between(0,100);
+		if(choice > 50){
+			// get additional heart, if one has been lost already
+			for(let i = 0; i < this.hearts.length; i++){
+				let currentHeart = this.hearts.getAt(i);
+
+				if(currentHeart.key === 'heartEmpty'){
+					currentHeart.loadTexture('heartFull');
+
+					// update health value as well
+					this.health += 10;
+
+					//display info text
+					this.infoText.setText('One heart recovered!');
+					this.infoText.visible = true;
+
+					// destroy it after 3 seconds
+					this.time.events.add(Phaser.Timer.SECOND * 5, function(){
+						self.infoText.visible=false;
+					}, this);
+
+					break;
+				}
+			}
+		} else {
+			// double amount of points for 5 seconds
+			this.coinValue = 20;
+
+			// set timer to put the collisions back to normal after a while
+			this.time.events.add(Phaser.Timer.SECOND * 5, function(){
+				self.coinValue = 10;
+			}, this);
+
+			//display info text
+			this.infoText.setText('All coins are double value for 5 seconds!');
+			this.infoText.visible = true;
+
+			this.coins.forEach(function(coin){
+				self.add.tween(coin.scale).to( { x: 1.5, y: 1.5}, 500, Phaser.Easing.Quadratic.InOut, true);
+
+			});
+
+			// destroy it after 3 seconds
+			this.time.events.add(Phaser.Timer.SECOND * 5, function(){
+				self.infoText.visible = false;
+
+				this.coins.forEach(function(coin){
+					self.add.tween(coin.scale).to( { x: 1, y: 1 }, 500, Phaser.Easing.Quadratic.InOut, true);
+
+				});
+			}, this);
+		}
+
 	},
 
 	togglePause: function (isPaused) {
