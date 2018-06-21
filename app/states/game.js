@@ -287,13 +287,15 @@ module.exports = {
   	console.log('dC: player: ', player.body);
   	console.log('dC: tile: ', tile);
 
-  	if(player.body.blocked.down){
+  	if(player.body.blocked.down || player.body.blocked.up){
   		console.log("Collision from above");
 		} else {
 			this.health -= 10;
 			this.enableCollision = false;
 			// this.duck.alpha = 0.2;
 			this.duck.tint = 0xFF3333;
+			this.add.tween(this.duck).to( { angle: 1440 }, 1000, Phaser.Easing.Linear.None, true);
+			this.add.tween(this.duck.scale).to( { x: 5, y: 5 }, 500, Phaser.Easing.Linear.None, true).yoyo(true);
 
 			for(let i = this.hearts.length-1; i >= 0; i--){
 				let currentHeart = this.hearts.getAt(i);
