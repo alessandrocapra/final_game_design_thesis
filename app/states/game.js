@@ -106,35 +106,34 @@ module.exports = {
 		// arrowDown.fixedToCamera = true;
 
 
-		var mouth = this.arrowUp = this.add.sprite(this.world.centerX*0.7, this.world.height*0.4, 'mouth');
+		var mouth = this.mouth = this.add.sprite(this.camera.width*0.4, this.world.height*0.4, 'mouth');
 		mouth.scale.setTo(0.1,0.1);
-		mouth.anchor.setTo(.5,.5);
+		mouth.anchor.setTo(0.5,0.5);
 		mouth.fixedToCamera = true;
 
-		var nose = this.arrowDown = this.add.sprite(this.world.centerX*0.7, this.world.height*0.52, 'nose');
+		var nose = this.nose = this.add.sprite(this.camera.width*0.4, this.world.height*0.52, 'nose');
 		nose.scale.setTo(0.1,0.1);
-		nose.anchor.setTo(.5,.5);
+		nose.anchor.setTo(0.5,0.5);
 		// flip it horizontally
 		// arrowDown.scale.y *= -1;
 		nose.fixedToCamera = true;
 
 		// add text for the arrows explanation
-		this.instructionArrowUp = this.add.text(this.world.centerX, this.world.height*0.4, 'Jump and fly', {align: "left", boundsAlignH: "left", boundsAlignV: "middle"});
-		this.instructionArrowUp.anchor.setTo(0.5, 0.5);
+		this.mouthText = this.add.text(this.camera.width * 0.56, this.world.height*0.4, 'Jump and fly', {align: "left", boundsAlignH: "left", boundsAlignV: "middle"});
+		this.mouthText.anchor.setTo(0.5, 0.5);
 		// fix to camera
-		this.instructionArrowUp.fixedToCamera = true;
+		this.mouthText.fixedToCamera = true;
 
-		this.instructionArrowDown = this.add.text(this.world.centerX*1.03, this.world.height*0.52, 'Go under water', {align: "left", boundsAlignH: "left", boundsAlignV: "middle"});
-		this.instructionArrowDown.anchor.setTo(0.5, 0.5);
+		this.noseText = this.add.text(this.camera.width * 0.58, this.world.height*0.52, 'Go under water', {align: "left", boundsAlignH: "left", boundsAlignV: "middle"});
+		this.noseText.anchor.setTo(0.5, 0.5);
 		// fix to camera
-		this.instructionArrowDown.fixedToCamera = true;
+		this.noseText.fixedToCamera = true;
 
-		// destroy the arrows and text after 5 seconds
+		// destroy the icons and text after 5 seconds
 		this.time.events.add(Phaser.Timer.SECOND * 5, function(){
-			mouth.destroy();
-			nose.destroy();
-			this.instructionArrowUp.destroy();
-			this.instructionArrowDown.destroy();
+			// debugger;
+			// tween to make instructions nicely disappear
+			this.switchAlphaInstructions([this.mouth, this.nose, this.mouthText, this.noseText]);
 		}, this);
 
 
@@ -166,8 +165,27 @@ module.exports = {
 
 		this.overlayBackground.fixedToCamera = true;
 		this.overlayBackground.visible = false;
-		this.overlayText.inputEnabled = true;
 		this.overlayText.visible = false;
+
+		// OK button for restarting the game
+		this.okBtn = this.add.sprite(this.camera.width * 0.5, this.camera.height * 0.6, 'button','blue_button04.png');
+		this.okBtn.anchor.set(0.5);
+		// this.overlayBackground.addChild(this.okBtn);
+		this.okBtn.inputEnabled = true;
+		this.okBtn.input.useHandCursor = true;
+		this.okBtn.visible = false;
+
+		this.okBtnText = this.add.text(0,0,'Ja', {align: "center"});
+		this.okBtnText.anchor.set(0.5);
+		this.okBtn.addChild(this.okBtnText);
+		this.okBtn.fixedToCamera = true;
+
+		this.okBtn.events.onInputUp.add(function(){
+			// setting instructions back to visible
+			self.switchAlphaInstructions([self.mouth, self.nose, self.mouthText, self.noseText]);
+
+			self.state.restart();
+		});
 
 		// Create pause button
 		this.pauseButton = this.add.image(this.camera.width - 40, 40, 'pauseButton');
@@ -470,6 +488,24 @@ module.exports = {
 		}, this);
 	},
 
+	switchAlphaInstructions: function(arrayElements){
+		// if alpha is 0, switch it on. If it's one, do the tween in a for loop for the array
+
+		for(let i = 0; i < arrayElements.length; i++){
+
+			this.add.tween(arrayElements[i]).to( { alpha: 0 }, 500, "Linear", true);
+			// if(arrayElements[i].alpha === 0){
+			// 	arrayElements[i].alpha = 1;
+			// } else {
+			// 	arrayElements[i].alpha = 0;
+			// 	this.add.tween(arrayElements[i]).to( { alpha: 0 }, 500, "Linear", true);
+			// 	tween.onComplete.add(function(){
+			// 		arrayElements[i].kill();
+			// 	}, this)
+			// }
+		}
+	},
+
 	displayOverlay: function(gameState){
 		this.overlayBackground.visible = true;
 		this.overlayText.visible = true;
@@ -478,12 +514,9 @@ module.exports = {
 		if(gameState === 'pause'){
 
 		} else if(gameState === 'gameOver'){
+			// this.overlayText.inputEnabled = true;
 			this.overlayText.setText('Well done! Play again?');
-
-			this.overlayText.events.onInputUp.add(function(){
-				self.state.restart();
-			});
-
+			this.okBtn.visible = true;
 
 		} else if(gameState === 'gameEnd'){
 
