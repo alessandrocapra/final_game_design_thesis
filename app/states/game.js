@@ -111,7 +111,7 @@ module.exports = {
 		mouth.anchor.setTo(.5,.5);
 		mouth.fixedToCamera = true;
 
-		var nose = this.arrowDown = this.add.sprite(this.world.centerX*0.7, this.world.height*0.52, 'nose')
+		var nose = this.arrowDown = this.add.sprite(this.world.centerX*0.7, this.world.height*0.52, 'nose');
 		nose.scale.setTo(0.1,0.1);
 		nose.anchor.setTo(.5,.5);
 		// flip it horizontally
@@ -152,15 +152,20 @@ module.exports = {
 		this.hearts.fixedToCamera = true;
 
 		// load overlay screen and hide it
-		this.overlayBackground = this.add.sprite(this.camera.x, this.camera.y, 'overlay');
-		this.overlayBackground.fixedToCamera = true;
-		this.overlayBackground.visible = false;
+		this.overlayBackground = this.add.sprite(0, 0, 'overlay');
+		this.overlayBackground.x = this.camera.width * 0.5;
+		this.overlayBackground.y = this.camera.height * 0.5;
+		this.overlayBackground.anchor.set(0.5, 0.5);
 
 		this.overlayText = this.add.text(0, 0, 'Text goes here' , { align: "center", font: "bold 24px Arial", fill: "#fff"});
 		this.overlayText.anchor.set(0.5, 0.5);
+
 		// add the text as child of the background container
 		this.overlayBackground.addChild(this.overlayText);
 		// this.overlayText.fixedToCamera = true;
+
+		this.overlayBackground.fixedToCamera = true;
+		this.overlayBackground.visible = false;
 		this.overlayText.inputEnabled = true;
 		this.overlayText.visible = false;
 
@@ -242,38 +247,18 @@ module.exports = {
 			// stop the music, perhaps play another sound
 			this.music.stop();
 
-			// show overlay screen
-			// this.menu.x = this.camera.x;
-			// this.menu.y = this.camera.y;
-			// this.playAgainText.x = this.camera.x;
-			// this.playAgainText.y = this.camera.y;
+			// display message for game over
+			this.displayOverlay('gameOver');
 
-			// this.playAgainText.fixedToCamera = true;
-			// this.playAgainText.cameraOffset.setTo(400, 315);
-			// this.playAgainText.anchor.setTo(0.5,0.5);
-
-			this.overlayBackground.visible = true;
-			this.overlayText.visible = true;
-			this.overlayText.events.onInputUp.add(function(){
-				self.state.restart();
-			});
 		} else if(this.stopTheCamera) {
 			this.paused = true;
 			this.physics.arcade.isPaused = true;
 			this.music.pause();
 
-			// this.menu.x = this.camera.x;
-			// this.menu.y = this.camera.y;
 			this.overlayBackground.visible = true;
 		} else {
 			// make the background scroll
 			this.background.tilePosition.x -= this.speed;
-
-			// keep scrolling the level
-			// this.camera.x += this.speed;
-
-			// keep background and player at the same position while the camera moves
-			// this.background.x += this.speed;
 		}
 
 		/*
@@ -486,8 +471,18 @@ module.exports = {
 	},
 
 	displayOverlay: function(gameState){
-  	// gamestate can have values "gameOver" or "gameEnd"
-		if(gameState === 'gameOver'){
+		this.overlayBackground.visible = true;
+		this.overlayText.visible = true;
+
+  	// gamestate can have values "pause", "gameOver", "gameEnd"
+		if(gameState === 'pause'){
+
+		} else if(gameState === 'gameOver'){
+			this.overlayText.setText('Well done! Play again?');
+
+			this.overlayText.events.onInputUp.add(function(){
+				self.state.restart();
+			});
 
 
 		} else if(gameState === 'gameEnd'){
