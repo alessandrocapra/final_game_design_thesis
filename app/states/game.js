@@ -151,14 +151,21 @@ module.exports = {
 		// fix to camera
 		this.hearts.fixedToCamera = true;
 
-		// load overlay gameOver screen and hide it
-		this.menu = this.add.sprite(this.camera.x, this.camera.y, 'overlay');
-		this.playAgainText = this.add.text(this.camera.x, this.camera.y, 'Not bad! Play again' , { font: "bold 24px Arial", fill: "#fff"});
-		this.menu.visible = false;
-		this.playAgainText.visible = false;
+		// load overlay screen and hide it
+		this.overlayBackground = this.add.sprite(this.camera.x, this.camera.y, 'overlay');
+		this.overlayBackground.fixedToCamera = true;
+		this.overlayBackground.visible = false;
+
+		this.overlayText = this.add.text(0, 0, 'Text goes here' , { align: "center", font: "bold 24px Arial", fill: "#fff"});
+		this.overlayText.anchor.set(0.5, 0.5);
+		// add the text as child of the background container
+		this.overlayBackground.addChild(this.overlayText);
+		// this.overlayText.fixedToCamera = true;
+		this.overlayText.inputEnabled = true;
+		this.overlayText.visible = false;
 
 		// Create pause button
-		this.pauseButton = this.add.image(world.width - 40, 40, 'pauseButton');
+		this.pauseButton = this.add.image(this.camera.width - 40, 40, 'pauseButton');
 		this.pauseButton.scale.setTo(0.1,0.1);
 		this.pauseButton.anchor.setTo(0.5, 0.5);
 		this.pauseButton.inputEnabled = true;
@@ -176,7 +183,7 @@ module.exports = {
 				self.music.resume();
 				self.paused = false;
 				self.physics.arcade.isPaused = (!self.physics.arcade.isPaused);
-				self.menu.visible = false;
+				self.overlayBackground.visible = false;
 
 				self.stopTheCamera = false;
 			}
@@ -217,6 +224,10 @@ module.exports = {
 
   	var self = this;
 
+		// if(this.duck.x > this.world.width * 0.05){
+  		// this.state.start('menu');
+		// }
+
   	/*
   	*
   	* MOVEMENT OF ELEMENTS
@@ -232,19 +243,18 @@ module.exports = {
 			this.music.stop();
 
 			// show overlay screen
-			this.menu.x = this.camera.x;
-			this.menu.y = this.camera.y;
-			this.playAgainText.x = this.camera.x;
-			this.playAgainText.y = this.camera.y;
+			// this.menu.x = this.camera.x;
+			// this.menu.y = this.camera.y;
+			// this.playAgainText.x = this.camera.x;
+			// this.playAgainText.y = this.camera.y;
 
-			this.playAgainText.fixedToCamera = true;
-			this.playAgainText.cameraOffset.setTo(400, 315);
-			this.playAgainText.anchor.setTo(0.5,0.5);
+			// this.playAgainText.fixedToCamera = true;
+			// this.playAgainText.cameraOffset.setTo(400, 315);
+			// this.playAgainText.anchor.setTo(0.5,0.5);
 
-			this.menu.visible = true;
-			this.playAgainText.visible = true;
-			this.playAgainText.inputEnabled = true;
-			this.playAgainText.events.onInputUp.add(function(){
+			this.overlayBackground.visible = true;
+			this.overlayText.visible = true;
+			this.overlayText.events.onInputUp.add(function(){
 				self.state.restart();
 			});
 		} else if(this.stopTheCamera) {
@@ -252,9 +262,9 @@ module.exports = {
 			this.physics.arcade.isPaused = true;
 			this.music.pause();
 
-			this.menu.x = this.camera.x;
-			this.menu.y = this.camera.y;
-			this.menu.visible = true;
+			// this.menu.x = this.camera.x;
+			// this.menu.y = this.camera.y;
+			this.overlayBackground.visible = true;
 		} else {
 			// make the background scroll
 			this.background.tilePosition.x -= this.speed;
@@ -473,6 +483,18 @@ module.exports = {
 		this.time.events.add(Phaser.Timer.SECOND * 5, function(){
 			text.visible=false;
 		}, this);
+	},
+
+	displayOverlay: function(gameState){
+  	// gamestate can have values "gameOver" or "gameEnd"
+		if(gameState === 'gameOver'){
+
+
+		} else if(gameState === 'gameEnd'){
+
+		} else {
+			console.log('You are not supposed to be here...');
+		}
 	}
 
 };
