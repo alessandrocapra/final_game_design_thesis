@@ -13,6 +13,7 @@
     "phaser-ce": "^2"
   },
   "devDependencies": {
+    "@orange-games/phaser-input": "^2.0.5",
     "auto-reload-brunch": "^2",
     "babel-brunch": "6.1.0",
     "brunch": "^2",

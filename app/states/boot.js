@@ -12,6 +12,9 @@ module.exports = {
     this.bar.width = 100;
     this.bar.height = 10;
     this.bar.alignIn(this.world.bounds, Phaser.CENTER);
+
+		// importing plugin to handle input boxes
+		this.add.plugin(PhaserInput.Plugin);
   },
 
   preload: function () {
